@@ -1,0 +1,1 @@
+enum DashboardTab { loans, clients }

@@ -1,0 +1,179 @@
+// Prisma schema for N-Ki backend using SQLite
+// Maps to the legacy table structure shared by the product team.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum ClienteTipo {
+  NUEVO      @map("Nuevo")
+  RECURRENTE @map("Recurrente")
+}
+
+enum PrestamoEstado {
+  ACTIVO  @map("Activo")
+  PAGADO  @map("Pagado")
+  VENCIDO @map("Vencido")
+}
+
+enum PrestamoFrecuencia {
+  DIARIO     @map("Diario")
+  SEMANAL    @map("Semanal")
+  QUINCENAL  @map("Quincenal")
+  MENSUAL    @map("Mensual")
+}
+
+model Usuario {
+  id               Int              @id @default(autoincrement()) @map("id_usuario")
+  nombre           String           @map("nombre")
+  apellido         String           @map("apellido")
+  correo           String           @unique @map("correo")
+  password         String           @map("password")
+  googleId         String?          @unique @map("google_id")
+  fechaNacimiento  DateTime?        @map("fecha_nacimiento")
+  createdAt        DateTime         @default(now()) @map("create_at")
+  deletedAt        DateTime?        @map("delete_at")
+
+  clientes         Cliente[]
+  prestamos        Prestamo[]
+  passwordResets   PasswordReset[]
+  refreshTokens    RefreshToken[]
+
+  @@map("usuario")
+}
+
+model Cliente {
+  id           Int           @id @default(autoincrement()) @map("id_cliente")
+  usuarioId    Int           @map("id_usuario")
+  cedula       String        @unique @map("cedula")
+  nombre       String        @map("nombre_completo")
+  telefono     String?       @map("telefono")
+  direccion    String?       @map("direccion")
+  tipo         ClienteTipo   @default(NUEVO) @map("tipo")
+  createdAt    DateTime      @default(now()) @map("create_at")
+  deletedAt    DateTime?     @map("delete_at")
+
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id])
+  prestamos    Prestamo[]
+
+  @@map("clientes")
+}
+
+model Tasa {
+  id        Int       @id @default(autoincrement()) @map("id_tasa")
+  fecha     DateTime  @map("fecha")
+  tasaDiaria Decimal   @map("tasa_diaria") @db.Decimal(10, 2)
+  createdAt DateTime  @default(now()) @map("create_at")
+  deletedAt DateTime? @map("delete_at")
+
+  prestamos Prestamo[]
+
+  @@map("tasas")
+}
+
+model Prestamo {
+  id               Int                @id @default(autoincrement()) @map("id_prestamo")
+  usuarioId        Int                @map("id_usuario")
+  clienteId        Int                @map("id_cliente")
+  tasaId           Int?               @map("id_tasa")
+  pagosId          Int?               @map("id_pagos")
+  montoCapital     Decimal            @map("SsSGCZwSmonto_capital") @db.Decimal(12, 2)
+  tasaInteres      Decimal            @map("tasa_interes") @db.Decimal(5, 2)
+  frecuenciaPago   PrestamoFrecuencia @map("frecuencia_pago")
+  fechaInicio      DateTime           @map("fecha_inicio")
+  fechaVencimiento DateTime           @map("fecha_vencimiento")
+  estado           PrestamoEstado     @default(ACTIVO) @map("estado")
+  totalInteres     Decimal            @default(0) @map("total_interes") @db.Decimal(12, 2)
+  saldoPendiente   Decimal            @map("saldo_pendiente") @db.Decimal(12, 2)
+  createdAt        DateTime           @default(now()) @map("create_at")
+  deletedAt        DateTime?          @map("delete_at")
+
+  usuario          Usuario            @relation(fields: [usuarioId], references: [id])
+  cliente          Cliente            @relation(fields: [clienteId], references: [id])
+  tasa             Tasa?              @relation(fields: [tasaId], references: [id])
+  cuotas           Cuota[]
+
+  @@map("prestamos")
+}
+
+model Cuota {
+  id               Int       @id @default(autoincrement()) @map("id_cuota")
+  prestamoId       Int       @map("id_prestamo")
+  numeroCuota      Int       @map("numero_cuota")
+  fechaVencimiento DateTime  @map("fecha_vencimiento_cuota")
+  capitalCuota     Decimal   @map("capital_cuota") @db.Decimal(10, 2)
+  interesCuota     Decimal   @map("interes_cuota") @db.Decimal(10, 2)
+  montoTotalCuota  Decimal   @map("monto_total_cuota") @db.Decimal(10, 2)
+  diasRetraso      Int       @default(0) @map("dias_retraso")
+  createdAt        DateTime  @default(now()) @map("create_at")
+  deletedAt        DateTime? @map("delete_at")
+
+  prestamo         Prestamo  @relation(fields: [prestamoId], references: [id])
+  pagos            Pago[]
+
+  @@map("cuotas")
+}
+
+model Pago {
+  id           Int       @id @default(autoincrement()) @map("id_pago")
+  cuotaId      Int       @map("id_cuota")
+  monto        Decimal   @map("monto") @db.Decimal(12, 2)
+  fecha        DateTime  @map("fecha")
+  referencia   String?   @map("referencia")
+  observaciones String?  @map("observaciones")
+  createdAt    DateTime  @default(now()) @map("create_at")
+  deletedAt    DateTime? @map("delete_at")
+
+  cuota        Cuota     @relation(fields: [cuotaId], references: [id])
+
+  @@map("pagos")
+}
+
+model ResumenFinanciero {
+  id                 Int      @id @default(autoincrement()) @map("id_resumen")
+  fecha              DateTime @map("fecha")
+  capitalPrestado    Decimal  @map("capital_prestado") @db.Decimal(15, 2)
+  gananciasTotales   Decimal  @map("ganancias_totales") @db.Decimal(15, 2)
+  dineroCalle        Decimal  @map("dinero_calle") @db.Decimal(15, 2)
+  totalClientes      Int      @map("total_clientes")
+  totalPrestamosActivos Int   @map("total_prestamos_activos")
+  createdAt          DateTime @default(now()) @map("create_at")
+  deletedAt          DateTime? @map("delete_at")
+
+  @@map("resumen_financiero")
+}
+
+model PasswordReset {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int
+  code        String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+
+  @@unique([usuarioId, code])
+  @@map("password_reset")
+}
+
+model RefreshToken {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int
+  tokenHash   String
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
+  userAgent   String?
+  ipAddress   String?
+
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+
+  @@index([usuarioId])
+  @@map("refresh_tokens")
+}
