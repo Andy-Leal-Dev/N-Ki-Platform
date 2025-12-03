@@ -1,0 +1,16 @@
+{
+  "resumenMensual": [
+    { "mes": "2025-06", "gananciaTotal": 1250.75 },
+    { "mes": "2025-07", "gananciaTotal": 1100.50 },
+    { "mes": "2025-08", "gananciaTotal": 980.20 },
+    { "mes": "2025-09", "gananciaTotal": 1430.00 },
+    { "mes": "2025-10", "gananciaTotal": 1325.40 },
+    { "mes": "2025-11", "gananciaTotal": 1589.90 }
+  ],
+  "porPrestamo": [
+    { "prestamoId": 1, "mes": "2025-11", "interes": 12.50, "comision": 2.50, "total": 15.00 },
+    { "prestamoId": 2, "mes": "2025-11", "interes": 45.00, "comision": 5.00, "total": 50.00 },
+    { "prestamoId": 4, "mes": "2025-11", "interes": 30.00, "comision": 3.00, "total": 33.00 },
+    { "prestamoId": 8, "mes": "2025-11", "interes": 18.40, "comision": 1.50, "total": 19.90 }
+  ]
+}

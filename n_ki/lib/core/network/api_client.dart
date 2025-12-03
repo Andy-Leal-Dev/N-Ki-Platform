@@ -6,10 +6,11 @@ import '../../data/models/auth_tokens.dart';
 import '../../data/models/auth_session.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../config/app_config.dart';
+import 'base_api_client.dart';
 import '../error/app_exception.dart';
 import '../storage/session_storage.dart';
 
-class ApiClient {
+class ApiClient implements BaseApiClient {
   ApiClient({
     required SessionStorage sessionStorage,
     required AuthRepository authRepository,
@@ -68,7 +69,8 @@ class ApiClient {
   final void Function()? _onUnauthorized;
   Completer<AuthTokens?>? _refreshCompleter;
 
-  Future<Response<dynamic>> get(
+  @override
+  Future<dynamic> get(
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
@@ -84,7 +86,8 @@ class ApiClient {
     }
   }
 
-  Future<Response<dynamic>> post(
+  @override
+  Future<dynamic> post(
     String path, {
     Object? data,
     Map<String, dynamic>? queryParameters,
@@ -102,7 +105,8 @@ class ApiClient {
     }
   }
 
-  Future<Response<dynamic>> put(
+  @override
+  Future<dynamic> put(
     String path, {
     Object? data,
     Map<String, dynamic>? queryParameters,
@@ -120,7 +124,8 @@ class ApiClient {
     }
   }
 
-  Future<Response<dynamic>> delete(
+  @override
+  Future<dynamic> delete(
     String path, {
     Object? data,
     Map<String, dynamic>? queryParameters,

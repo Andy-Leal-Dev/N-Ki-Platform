@@ -5,7 +5,9 @@ import '../../data/models/resumen.dart';
 import '../../data/repositories/resumen_repository.dart';
 
 class ResumenProvider extends ChangeNotifier {
-  ResumenProvider(this._repository);
+  ResumenProvider(this._repository) {
+    Future<void>.microtask(() => loadResumen());
+  }
 
   final ResumenRepository _repository;
 

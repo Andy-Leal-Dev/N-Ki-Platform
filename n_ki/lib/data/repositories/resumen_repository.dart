@@ -1,47 +1,59 @@
-import '../../core/error/app_exception.dart';
-import '../../core/network/api_client.dart';
+import '../data_sources/static_data_source.dart';
 import '../models/resumen.dart';
 
 class ResumenRepository {
-  ResumenRepository(this._apiClient);
+  ResumenRepository(this._dataSource);
 
-  final ApiClient _apiClient;
+  final StaticDataSource _dataSource;
 
   Future<List<ResumenFinanciero>> listResumenes({
     String? fechaInicio,
     String? fechaFin,
   }) async {
-    final Map<String, dynamic> data = await _getData(
-      '/resumen',
-      queryParameters: <String, dynamic>{
-        if (fechaInicio != null) 'fechaInicio': fechaInicio,
-        if (fechaFin != null) 'fechaFin': fechaFin,
-      },
+    final List<Map<String, dynamic>> prestamos = await _dataSource.loadList(
+      'prestamos.json',
     );
-    final List<dynamic> items = data['data'] as List<dynamic>? ?? <dynamic>[];
-    return items
-        .map(
-          (dynamic item) =>
-              ResumenFinanciero.fromJson(item as Map<String, dynamic>),
+    final List<Map<String, dynamic>> clientes = await _dataSource.loadList(
+      'clients.json',
+    );
+    final Map<String, dynamic> ganancias = await _dataSource.loadMap(
+      'ganancias.json',
+    );
+
+    final double capitalPrestado = prestamos
+        .where(
+          (Map<String, dynamic> p) =>
+              (p['estado'] as String?)?.toLowerCase() == 'activo',
         )
-        .toList();
-  }
+        .fold<double>(
+          0,
+          (double acc, Map<String, dynamic> p) =>
+              acc + ((p['montoCapital'] as num?)?.toDouble() ?? 0),
+        );
 
-  Future<Map<String, dynamic>> _getData(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    final response = await _apiClient.get(
-      path,
-      queryParameters: queryParameters,
-    );
-    return _asMap(response.data);
-  }
-
-  Map<String, dynamic> _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
+    double gananciasTotales = 0;
+    final List<dynamic>? resumenMensual =
+        ganancias['resumenMensual'] as List<dynamic>?;
+    if (resumenMensual != null && resumenMensual.isNotEmpty) {
+      final Map<String, dynamic> last =
+          resumenMensual.last as Map<String, dynamic>;
+      gananciasTotales = (last['gananciaTotal'] as num?)?.toDouble() ?? 0;
     }
-    throw AppException('Respuesta inesperada del servidor');
+
+    final ResumenFinanciero resumen = ResumenFinanciero(
+      fecha: DateTime.now(),
+      capitalPrestado: capitalPrestado,
+      gananciasTotales: gananciasTotales,
+      dineroCalle: capitalPrestado,
+      totalClientes: clientes.length,
+      totalPrestamosActivos: prestamos
+          .where(
+            (Map<String, dynamic> p) =>
+                (p['estado'] as String?)?.toLowerCase() == 'activo',
+          )
+          .length,
+    );
+
+    return <ResumenFinanciero>[resumen];
   }
 }

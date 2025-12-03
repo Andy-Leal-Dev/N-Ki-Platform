@@ -1,29 +1,38 @@
 import '../../core/error/app_exception.dart';
-import '../../core/network/api_client.dart';
+import '../data_sources/static_data_source.dart';
 import '../models/tasa.dart';
 
 class TasasRepository {
-  TasasRepository(this._apiClient);
+  TasasRepository(this._dataSource);
 
-  final ApiClient _apiClient;
+  final StaticDataSource _dataSource;
+  static const String _file = 'tasas.json';
 
   Future<List<Tasa>> listTasas() async {
-    final Map<String, dynamic> data = await _getData('/tasas');
-    final List<dynamic> items = data['data'] as List<dynamic>? ?? <dynamic>[];
-    return items
-        .map((dynamic item) => Tasa.fromJson(item as Map<String, dynamic>))
-        .toList();
+    final List<Map<String, dynamic>> raw = await _dataSource.loadList(_file);
+    return raw.map(Tasa.fromJson).toList();
   }
 
   Future<Tasa> createTasa({
     required String fecha,
     required double tasaDiaria,
   }) async {
-    final Map<String, dynamic> data = await _postData(
-      '/tasas',
-      body: <String, dynamic>{'fecha': fecha, 'tasaDiaria': tasaDiaria},
-    );
-    return Tasa.fromJson(data['data'] as Map<String, dynamic>);
+    final List<Map<String, dynamic>> tasas = await _dataSource.loadList(_file);
+    final int nextId =
+        tasas.fold<int>(0, (int acc, Map<String, dynamic> item) {
+          final int currentId = item['id'] as int? ?? 0;
+          return currentId > acc ? currentId : acc;
+        }) +
+        1;
+
+    final Map<String, dynamic> created = <String, dynamic>{
+      'id': nextId,
+      'fecha': fecha,
+      'tasaDiaria': tasaDiaria,
+    };
+
+    tasas.insert(0, created);
+    return Tasa.fromJson(created);
   }
 
   Future<Tasa> updateTasa({
@@ -31,37 +40,26 @@ class TasasRepository {
     String? fecha,
     double? tasaDiaria,
   }) async {
-    final Map<String, dynamic> body = <String, dynamic>{};
-    if (fecha != null) body['fecha'] = fecha;
-    if (tasaDiaria != null) body['tasaDiaria'] = tasaDiaria;
+    final List<Map<String, dynamic>> tasas = await _dataSource.loadList(_file);
+    final int index = tasas.indexWhere(
+      (Map<String, dynamic> item) => item['id'] == id,
+    );
+    if (index == -1) {
+      throw AppException('Tasa no encontrada');
+    }
 
-    final Map<String, dynamic> data = await _putData('/tasas/$id', body: body);
-    return Tasa.fromJson(data['data'] as Map<String, dynamic>);
+    final Map<String, dynamic> updated = Map<String, dynamic>.from(
+      tasas[index],
+    );
+    if (fecha != null) updated['fecha'] = fecha;
+    if (tasaDiaria != null) updated['tasaDiaria'] = tasaDiaria;
+
+    tasas[index] = updated;
+    return Tasa.fromJson(updated);
   }
 
   Future<void> deleteTasa(int id) async {
-    await _apiClient.delete('/tasas/$id');
-  }
-
-  Future<Map<String, dynamic>> _getData(String path) async {
-    final response = await _apiClient.get(path);
-    return _asMap(response.data);
-  }
-
-  Future<Map<String, dynamic>> _postData(String path, {Object? body}) async {
-    final response = await _apiClient.post(path, data: body);
-    return _asMap(response.data);
-  }
-
-  Future<Map<String, dynamic>> _putData(String path, {Object? body}) async {
-    final response = await _apiClient.put(path, data: body);
-    return _asMap(response.data);
-  }
-
-  Map<String, dynamic> _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-    throw AppException('Respuesta inesperada del servidor');
+    final List<Map<String, dynamic>> tasas = await _dataSource.loadList(_file);
+    tasas.removeWhere((Map<String, dynamic> item) => item['id'] == id);
   }
 }

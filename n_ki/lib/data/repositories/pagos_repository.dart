@@ -1,17 +1,17 @@
-import '../../core/error/app_exception.dart';
-import '../../core/network/api_client.dart';
+import '../data_sources/static_data_source.dart';
 import '../models/pago.dart';
 
 class PagosRepository {
-  PagosRepository(this._apiClient);
+  PagosRepository(this._dataSource);
 
-  final ApiClient _apiClient;
+  final StaticDataSource _dataSource;
+  static const String _file = 'pagos.json';
 
   Future<List<Pago>> listPagos(int cuotaId) async {
-    final Map<String, dynamic> data = await _getData('/cuotas/$cuotaId/pagos');
-    final List<dynamic> items = data['data'] as List<dynamic>? ?? <dynamic>[];
-    return items
-        .map((dynamic item) => Pago.fromJson(item as Map<String, dynamic>))
+    final List<Map<String, dynamic>> raw = await _dataSource.loadList(_file);
+    return raw
+        .where((Map<String, dynamic> item) => item['cuotaId'] == cuotaId)
+        .map(Pago.fromJson)
         .toList();
   }
 
@@ -22,32 +22,24 @@ class PagosRepository {
     String? referencia,
     String? observaciones,
   }) async {
-    final Map<String, dynamic> data = await _postData(
-      '/cuotas/$cuotaId/pagos',
-      body: <String, dynamic>{
-        'monto': monto,
-        'fecha': fecha,
-        'referencia': referencia,
-        'observaciones': observaciones,
-      },
-    );
-    return Pago.fromJson(data['data'] as Map<String, dynamic>);
-  }
+    final List<Map<String, dynamic>> pagos = await _dataSource.loadList(_file);
+    final int nextId =
+        pagos.fold<int>(0, (int acc, Map<String, dynamic> item) {
+          final int currentId = item['id'] as int? ?? 0;
+          return currentId > acc ? currentId : acc;
+        }) +
+        1;
 
-  Future<Map<String, dynamic>> _getData(String path) async {
-    final response = await _apiClient.get(path);
-    return _asMap(response.data);
-  }
+    final Map<String, dynamic> created = <String, dynamic>{
+      'id': nextId,
+      'cuotaId': cuotaId,
+      'monto': monto,
+      'fecha': fecha,
+      'referencia': referencia,
+      'observaciones': observaciones,
+    };
 
-  Future<Map<String, dynamic>> _postData(String path, {Object? body}) async {
-    final response = await _apiClient.post(path, data: body);
-    return _asMap(response.data);
-  }
-
-  Map<String, dynamic> _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-    throw AppException('Respuesta inesperada del servidor');
+    pagos.insert(0, created);
+    return Pago.fromJson(created);
   }
 }

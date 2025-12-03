@@ -1,18 +1,16 @@
 import '../../core/error/app_exception.dart';
-import '../../core/network/api_client.dart';
+import '../data_sources/static_data_source.dart';
 import '../models/cliente.dart';
 
 class ClientesRepository {
-  ClientesRepository(this._apiClient);
+  ClientesRepository(this._dataSource);
 
-  final ApiClient _apiClient;
+  final StaticDataSource _dataSource;
+  static const String _file = 'clients.json';
 
   Future<List<Cliente>> listClientes() async {
-    final Map<String, dynamic> data = await _getData('/clientes');
-    final List<dynamic> items = data['data'] as List<dynamic>? ?? <dynamic>[];
-    return items
-        .map((dynamic item) => Cliente.fromJson(item as Map<String, dynamic>))
-        .toList();
+    final List<Map<String, dynamic>> raw = await _dataSource.loadList(_file);
+    return raw.map(Cliente.fromJson).toList();
   }
 
   Future<Cliente> createCliente({
@@ -22,17 +20,27 @@ class ClientesRepository {
     String? direccion,
     String? tipo,
   }) async {
-    final Map<String, dynamic> data = await _postData(
-      '/clientes',
-      body: <String, dynamic>{
-        'cedula': cedula,
-        'nombre': nombre,
-        'telefono': telefono,
-        'direccion': direccion,
-        if (tipo != null) 'tipo': tipo,
-      },
+    final List<Map<String, dynamic>> clients = await _dataSource.loadList(
+      _file,
     );
-    return Cliente.fromJson(data['data'] as Map<String, dynamic>);
+    final int nextId =
+        clients.fold<int>(0, (int acc, Map<String, dynamic> item) {
+          final int currentId = item['id'] as int? ?? 0;
+          return currentId > acc ? currentId : acc;
+        }) +
+        1;
+
+    final Map<String, dynamic> created = <String, dynamic>{
+      'id': nextId,
+      'cedula': cedula,
+      'nombre': nombre,
+      'telefono': telefono,
+      'direccion': direccion,
+      if (tipo != null) 'tipo': tipo,
+    };
+
+    clients.insert(0, created);
+    return Cliente.fromJson(created);
   }
 
   Future<Cliente> updateCliente({
@@ -43,42 +51,33 @@ class ClientesRepository {
     String? direccion,
     String? tipo,
   }) async {
-    final Map<String, dynamic> data = await _putData(
-      '/clientes/$id',
-      body: <String, dynamic>{
-        if (cedula != null) 'cedula': cedula,
-        if (nombre != null) 'nombre': nombre,
-        if (telefono != null) 'telefono': telefono,
-        if (direccion != null) 'direccion': direccion,
-        if (tipo != null) 'tipo': tipo,
-      },
+    final List<Map<String, dynamic>> clients = await _dataSource.loadList(
+      _file,
     );
-    return Cliente.fromJson(data['data'] as Map<String, dynamic>);
+    final int index = clients.indexWhere(
+      (Map<String, dynamic> item) => item['id'] == id,
+    );
+    if (index == -1) {
+      throw AppException('Cliente no encontrado');
+    }
+
+    final Map<String, dynamic> updated = Map<String, dynamic>.from(
+      clients[index],
+    );
+    if (cedula != null) updated['cedula'] = cedula;
+    if (nombre != null) updated['nombre'] = nombre;
+    if (telefono != null) updated['telefono'] = telefono;
+    if (direccion != null) updated['direccion'] = direccion;
+    if (tipo != null) updated['tipo'] = tipo;
+
+    clients[index] = updated;
+    return Cliente.fromJson(updated);
   }
 
   Future<void> deleteCliente(int id) async {
-    await _apiClient.delete('/clientes/$id');
-  }
-
-  Future<Map<String, dynamic>> _getData(String path) async {
-    final response = await _apiClient.get(path);
-    return _asMap(response.data);
-  }
-
-  Future<Map<String, dynamic>> _postData(String path, {Object? body}) async {
-    final response = await _apiClient.post(path, data: body);
-    return _asMap(response.data);
-  }
-
-  Future<Map<String, dynamic>> _putData(String path, {Object? body}) async {
-    final response = await _apiClient.put(path, data: body);
-    return _asMap(response.data);
-  }
-
-  Map<String, dynamic> _asMap(dynamic value) {
-    if (value is Map<String, dynamic>) {
-      return value;
-    }
-    throw AppException('Respuesta inesperada del servidor');
+    final List<Map<String, dynamic>> clients = await _dataSource.loadList(
+      _file,
+    );
+    clients.removeWhere((Map<String, dynamic> item) => item['id'] == id);
   }
 }

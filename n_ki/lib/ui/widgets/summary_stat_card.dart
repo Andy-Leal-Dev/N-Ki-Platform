@@ -42,14 +42,14 @@ class SummaryStatCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(2),
+                  padding: const EdgeInsets.all(0),
                   decoration: BoxDecoration(
                     color: (background ?? palette.accentSoft).withAlpha(
                       (0.32 * 255).round(),
                     ),
                     borderRadius: const BorderRadius.all(Radius.circular(14)),
                   ),
-                  child: Icon(icon, color: palette.accent, size: 22),
+                  child: Icon(icon, color: palette.accent, size: 20),
                 ),
                 Text(title, style: AppTextStyles.statLabel(context)),
               ],

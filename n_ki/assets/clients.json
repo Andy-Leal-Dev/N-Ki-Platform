@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "cedula": "V-12345678",
+    "nombre": "Ana González",
+    "telefono": "04141234567",
+    "direccion": "Calle Falsa 123",
+    "email": "ana.gonzalez@example.com",
+    "registradoEn": "2024-02-15T10:30:00Z"
+  },
+  {
+    "id": 2,
+    "cedula": "V-87654321",
+    "nombre": "Luis Pérez",
+    "telefono": "04141230001",
+    "direccion": "Av. Siempre Viva 742",
+    "email": "luis.perez@example.com",
+    "registradoEn": "2023-11-01T09:00:00Z"
+  },
+  {
+    "id": 3,
+    "cedula": "V-11223344",
+    "nombre": "María Rodríguez",
+    "telefono": "04141239999",
+    "direccion": "Calle Luna 45",
+    "email": "maria.rodriguez@example.com",
+    "registradoEn": "2025-01-20T12:00:00Z"
+  },
+  {
+    "id": 4,
+    "cedula": "V-55667788",
+    "nombre": "Carlos Fernández",
+    "telefono": "04141237777",
+    "direccion": "Boulevard Central 10",
+    "email": "carlos.fernandez@example.com",
+    "registradoEn": "2024-06-05T14:22:00Z"
+  },
+  {
+    "id": 5,
+    "cedula": "V-99887766",
+    "nombre": "Lucía Morales",
+    "telefono": "04141236666",
+    "direccion": "Paseo Las Flores 8",
+    "email": "lucia.morales@example.com",
+    "registradoEn": "2024-09-12T08:15:00Z"
+  },
+  {
+    "id": 6,
+    "cedula": "V-44556677",
+    "nombre": "Jorge Castillo",
+    "telefono": "04141235555",
+    "direccion": "Sector El Mirador, Casa 3",
+    "email": "jorge.castillo@example.com",
+    "registradoEn": "2023-07-30T16:40:00Z"
+  },
+  {
+    "id": 7,
+    "cedula": "V-33445566",
+    "nombre": "Sofía Ruiz",
+    "telefono": "04141234444",
+    "direccion": "Urb. Las Palmeras, Apto 2B",
+    "email": "sofia.ruiz@example.com",
+    "registradoEn": "2025-03-10T11:11:00Z"
+  },
+  {
+    "id": 8,
+    "cedula": "V-22334455",
+    "nombre": "Miguel Santos",
+    "telefono": "04141233333",
+    "direccion": "Km 12, Carretera Norte",
+    "email": "miguel.santos@example.com",
+    "registradoEn": "2022-12-18T07:50:00Z"
+  }
+]

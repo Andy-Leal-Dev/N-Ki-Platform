@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/error/app_exception.dart';
 import '../../data/models/pago.dart';
 import '../../data/models/prestamo.dart';
+import '../../data/models/agenda_registro.dart';
 import '../../data/repositories/pagos_repository.dart';
 import '../../data/repositories/prestamos_repository.dart';
 
@@ -11,16 +12,23 @@ class PrestamosProvider extends ChangeNotifier {
     required PrestamosRepository prestamosRepository,
     required PagosRepository pagosRepository,
   }) : _prestamosRepository = prestamosRepository,
-       _pagosRepository = pagosRepository;
+       _pagosRepository = pagosRepository {
+    Future<void>.microtask(() async {
+      await loadPrestamos();
+      await loadAgenda();
+    });
+  }
 
   final PrestamosRepository _prestamosRepository;
   final PagosRepository _pagosRepository;
 
   final List<Prestamo> _prestamos = <Prestamo>[];
+  final List<AgendaRegistro> _agenda = <AgendaRegistro>[];
   bool _isLoading = false;
   String? _error;
 
   List<Prestamo> get prestamos => List<Prestamo>.unmodifiable(_prestamos);
+  List<AgendaRegistro> get agenda => List<AgendaRegistro>.unmodifiable(_agenda);
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -29,6 +37,22 @@ class PrestamosProvider extends ChangeNotifier {
     try {
       final List<Prestamo> items = await _prestamosRepository.listPrestamos();
       _prestamos
+        ..clear()
+        ..addAll(items);
+      _error = null;
+    } on AppException catch (error) {
+      _error = error.message;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> loadAgenda() async {
+    _setLoading(true);
+    try {
+      final List<AgendaRegistro> items = await _prestamosRepository
+          .listAgenda();
+      _agenda
         ..clear()
         ..addAll(items);
       _error = null;

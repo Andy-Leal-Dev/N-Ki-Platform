@@ -5,7 +5,9 @@ import '../../data/models/tasa.dart';
 import '../../data/repositories/tasas_repository.dart';
 
 class TasasProvider extends ChangeNotifier {
-  TasasProvider(this._repository);
+  TasasProvider(this._repository) {
+    Future<void>.microtask(() => loadTasas());
+  }
 
   final TasasRepository _repository;
 

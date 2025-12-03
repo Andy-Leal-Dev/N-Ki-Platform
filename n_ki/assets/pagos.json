@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "cuotaId": 1001,
+    "monto": 95.49,
+    "fecha": "2025-11-01T08:30:00Z",
+    "referencia": "TRX-001",
+    "observaciones": "Pago mensual puntual"
+  },
+  {
+    "id": 2,
+    "cuotaId": 2001,
+    "monto": 125.3,
+    "fecha": "2025-10-10T10:00:00Z",
+    "referencia": "TRX-002",
+    "observaciones": "Pago por transferencia"
+  },
+  {
+    "id": 3,
+    "cuotaId": 4001,
+    "monto": 100.2,
+    "fecha": "2025-09-20T09:15:00Z",
+    "referencia": "TRX-003",
+    "observaciones": "Abono con recargo"
+  }
+]

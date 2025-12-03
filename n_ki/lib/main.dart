@@ -2,68 +2,58 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
-import 'core/storage/secure_storage.dart';
-import 'core/storage/session_storage.dart';
-import 'core/network/api_client.dart';
-import 'data/repositories/auth_repository.dart';
+import 'data/data_sources/static_data_source.dart';
 import 'data/repositories/clientes_repository.dart';
 import 'data/repositories/pagos_repository.dart';
 import 'data/repositories/prestamos_repository.dart';
 import 'data/repositories/resumen_repository.dart';
 import 'data/repositories/tasas_repository.dart';
+import 'data/repositories/historial_repository.dart';
 import 'ui/constants/app_colors.dart';
 import 'ui/screens/dashboard_page.dart';
+import 'ui/screens/agenda_page.dart';
 import 'ui/screens/forgot_password_email_page.dart';
 import 'ui/screens/login_page.dart';
-import 'ui/screens/splash_page.dart';
+import 'ui/screens/loan_history_page.dart';
 import 'ui/state/app_theme_scope.dart';
-import 'ui/state/auth_provider.dart';
 import 'ui/state/clientes_provider.dart';
 import 'ui/state/prestamos_provider.dart';
 import 'ui/state/resumen_provider.dart';
 import 'ui/state/tasas_provider.dart';
+import 'ui/state/historial_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Future.wait([
+    initializeDateFormatting('es'),
+    initializeDateFormatting('es_VE'),
+  ]);
 
-  final AppSecureStorage secureStorage = AppSecureStorage();
-  final SessionStorage sessionStorage = SessionStorage(secureStorage);
-  final AuthRepository authRepository = AuthRepository();
-  final AuthProvider authProvider = AuthProvider(
-    authRepository: authRepository,
-    sessionStorage: sessionStorage,
-  );
-  await authProvider.initialize();
-
-  late final ApiClient apiClient;
-  apiClient = ApiClient(
-    sessionStorage: sessionStorage,
-    authRepository: authRepository,
-    onUnauthorized: authProvider.handleUnauthorized,
-  );
+  final StaticDataSource dataSource = StaticDataSource();
 
   runApp(
     MultiProvider(
       providers: [
-        Provider<SessionStorage>.value(value: sessionStorage),
-        Provider<AuthRepository>.value(value: authRepository),
-        Provider<ApiClient>.value(value: apiClient),
-        ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
+        Provider<StaticDataSource>.value(value: dataSource),
         ChangeNotifierProvider<ClientesProvider>(
-          create: (_) => ClientesProvider(ClientesRepository(apiClient)),
+          create: (_) => ClientesProvider(ClientesRepository(dataSource)),
         ),
         ChangeNotifierProvider<PrestamosProvider>(
           create: (_) => PrestamosProvider(
-            prestamosRepository: PrestamosRepository(apiClient),
-            pagosRepository: PagosRepository(apiClient),
+            prestamosRepository: PrestamosRepository(dataSource),
+            pagosRepository: PagosRepository(dataSource),
           ),
         ),
         ChangeNotifierProvider<ResumenProvider>(
-          create: (_) => ResumenProvider(ResumenRepository(apiClient)),
+          create: (_) => ResumenProvider(ResumenRepository(dataSource)),
         ),
         ChangeNotifierProvider<TasasProvider>(
-          create: (_) => TasasProvider(TasasRepository(apiClient)),
+          create: (_) => TasasProvider(TasasRepository(dataSource)),
+        ),
+        ChangeNotifierProvider<HistorialProvider>(
+          create: (_) => HistorialProvider(HistorialRepository(dataSource)),
         ),
       ],
       child: const MyApp(),
@@ -96,11 +86,13 @@ class _MyAppState extends State<MyApp> {
         themeMode: _themeMode,
         theme: _buildTheme(AppColors.light, Brightness.light),
         darkTheme: _buildTheme(AppColors.dark, Brightness.dark),
-        home: const AuthGate(),
+        home: const DashboardPage(),
         routes: {
           '/login': (_) => const LoginPage(),
           '/dashboard': (_) => const DashboardPage(),
+          '/agenda': (_) => const AgendaPage(),
           '/forgot-password': (_) => const ForgotPasswordEmailPage(),
+          '/loan-history': (_) => const LoanHistoryPage(),
         },
       ),
     );
@@ -178,27 +170,6 @@ class _MyAppState extends State<MyApp> {
         hintStyle: TextStyle(color: palette.mutedText),
       ),
       fontFamily: 'Roboto',
-    );
-  }
-}
-
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (BuildContext context, AuthProvider auth, Widget? child) {
-        if (!auth.initialized) {
-          return const SplashPage();
-        }
-
-        if (!auth.isAuthenticated) {
-          return const LoginPage();
-        }
-
-        return const DashboardPage();
-      },
     );
   }
 }

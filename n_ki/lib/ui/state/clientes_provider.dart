@@ -5,7 +5,10 @@ import '../../data/models/cliente.dart';
 import '../../data/repositories/clientes_repository.dart';
 
 class ClientesProvider extends ChangeNotifier {
-  ClientesProvider(this._repository);
+  ClientesProvider(this._repository) {
+    // Load clientes automatically when provider is created
+    Future<void>.microtask(() => loadClientes());
+  }
 
   final ClientesRepository _repository;
 
